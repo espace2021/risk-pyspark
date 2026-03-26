@@ -3,8 +3,20 @@ from pydantic import BaseModel
 from pyspark.sql import SparkSession
 from pyspark.ml import PipelineModel
 
-# Init Spark
-spark = SparkSession.builder.appName("RiskAPI").getOrCreate()
+# Init Spark en mode local avec config optimisée pour Render
+spark = SparkSession.builder \
+    .appName("RiskAPI") \
+    .master("local[*]") \
+    .config("spark.driver.host", "localhost") \
+    .config("spark.driver.bindAddress", "127.0.0.1") \
+    .config("spark.network.timeout", "800s") \
+    .config("spark.executor.heartbeatInterval", "60s") \
+    .config("spark.sql.shuffle.partitions", "2") \
+    .config("spark.default.parallelism", "2") \
+    .config("spark.ui.enabled", "false") \
+    .getOrCreate()
+
+spark.sparkContext.setLogLevel("ERROR")  # Réduit le bruit dans les logs
 
 # Charger modèle Spark
 model = PipelineModel.load("spark_model")
@@ -22,15 +34,14 @@ def home():
 @app.post("/predict")
 def predict(data: Project):
     try:
-        # Créer DataFrame Spark
+        # Créer DataFrame Spark avec schema explicite (évite les erreurs de type)
         df = spark.createDataFrame([{
-            "Budget": data.Budget,
-            "Montant_collecte": data.Montant_collecte
+            "Budget": float(data.Budget),
+            "Montant_collecte": float(data.Montant_collecte)
         }])
 
         # Prédiction
         result = model.transform(df)
-
         prediction = result.select("prediction").collect()[0][0]
 
         return {
