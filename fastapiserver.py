@@ -6,14 +6,16 @@ from pyspark.ml import PipelineModel
 # Init Spark en mode local avec config optimisée pour Render
 spark = SparkSession.builder \
     .appName("RiskAPI") \
-    .master("local[*]") \
-    .config("spark.driver.host", "localhost") \
-    .config("spark.driver.bindAddress", "127.0.0.1") \
+    .master("local[1]") \
+    .config("spark.driver.host", "127.0.0.1") \
+    .config("spark.driver.bindAddress", "0.0.0.0") \
     .config("spark.network.timeout", "800s") \
     .config("spark.executor.heartbeatInterval", "60s") \
     .config("spark.sql.shuffle.partitions", "2") \
     .config("spark.default.parallelism", "2") \
     .config("spark.ui.enabled", "false") \
+    .config("spark.authenticate", "false") \
+    .config("spark.driver.extraJavaOptions", "-Djava.net.preferIPv4Stack=true") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")  # Réduit le bruit dans les logs
