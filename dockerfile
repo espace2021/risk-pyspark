@@ -4,14 +4,15 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Installer OpenJDK 17 pour Spark
+RUN apt-get update && apt-get install -y default-jdk && apt-get clean
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Important pour Spark
 ENV PYSPARK_PYTHON=python3
 
-CMD ["uvicorn", "fastapiserver:app", "--host", "0.0.0.0", "--port", "10000"]
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Installer OpenJDK 17 pour Spark
-RUN apt-get update && apt install openjdk-17-jdk -y
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV PATH=$JAVA_HOME/bin:$PATH
+CMD ["uvicorn", "fastapiserver:app", "--host", "0.0.0.0", "--port", "10000"]
